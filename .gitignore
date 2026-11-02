@@ -18,3 +18,9 @@ ENV/
 
 # Arquivos temporários e logs
 *.log
+
+# Materiais e documentos da disciplina (mantidos apenas localmente)
+Projeto_U2.pdf
+Mini_Projeto.pdf
+Mini_projeto.ipynb
+Plano Projeto 02.txt

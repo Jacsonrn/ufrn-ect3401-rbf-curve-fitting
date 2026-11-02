@@ -31,7 +31,6 @@ O foco central é a investigação de baixo nível em Álgebra Linear Numérica,
 │   ├── figuras/              # Gráficos de alta resolução para relatório e README
 │   └── relatorio/            # Artigo/Relatório formal em LaTeX
 ├── fundamentacao_teorica.md  # Teoria exaustiva e banco de questões para defesa oral
-├── Plano Projeto 02.txt      # Cronograma detalhado de execução (5 Dias)
 ├── .gitignore                # Regras de exclusão de artefatos temporários
 └── README.md                 # Apresentação do projeto e guia de execução
 ```
