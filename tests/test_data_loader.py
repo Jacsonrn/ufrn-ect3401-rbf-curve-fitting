@@ -1,6 +1,11 @@
 """
 Script de Validação do Dia 1: Carregamento e Espalhamento Treino vs Teste
 """
+import os
+import sys
+# Garante que o diretório raiz esteja no PYTHONPATH
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -26,8 +31,9 @@ def main():
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("dia1_espalhamento_dados.png", dpi=300)
-    print("Gráfico salvo como 'dia1_espalhamento_dados.png'.")
+    output_path = os.path.join(os.path.dirname(__file__), "..", "docs", "figuras", "dia1_espalhamento_dados.png")
+    plt.savefig(output_path, dpi=300)
+    print(f"Gráfico salvo com sucesso em '{output_path}'.")
 
 if __name__ == "__main__":
     main()
