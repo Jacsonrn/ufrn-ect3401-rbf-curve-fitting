@@ -1,0 +1,73 @@
+Excelente escolha! O dataset **`load_diabetes`** do `scikit-learn` é perfeito para o **Projeto U2**: possui 442 amostras de pacientes com 10 variáveis fisiológicas e biológicas (como `bmi` - Índice de Massa Corporal, pressão arterial, níveis de soro) para prever a **medida quantitativa contínua da progressão da doença**.
+
+Como a relação entre fatores metabólicos e a progressão da doença é não-linear e contém variabilidade biológica (ruído), este dataset permite demonstrar com clareza a superioridade da **RBF Gaussiana** em relação aos **Mínimos Quadrados (MMQ)** tradicionais.
+
+Abaixo está o **plano de execução detalhado de 5 dias**, estruturado para cumprir rigorosamente todas as etapas de avaliação do **`Projeto_U2.pdf`** (total de 10,0 pontos).
+
+---
+
+### 📅 **Plano de Execução Passo a Passo (5 Dias) com `load_diabetes`**
+
+#### **Dia 1: Carregamento, Divisão e Normalização dos Dados**
+* **Atividades**:
+  1. Importar o dataset: `from sklearn.datasets import load_diabetes`.
+  2. Selecionar a variável de entrada \\(u\\) (ex.: `bmi` - Índice de Massa Corporal ou `s5` - nível de soro sanguíneo) e a variável alvo \\(y\\) (progressão contínua da diabetes).
+  3. Divisão de dados: Separar em conjunto de **Treino** (~80% ou 353 amostras) e **Teste** (~20% ou 89 amostras).
+  4. Aplicar a normalização MinMax (escala \\(\\)) na variável de entrada \\(u\\).
+* **Restrições e Requisitos da Etapa**:
+  * **Obrigatória a Normalização**: A RBF Gaussiana calcula a distância euclidiana \\(\|x - c_j\|\\) entre os dados e os centros \\(c_j\\). Se os dados não estiverem na escala \\(\\), o raio \\(\sigma\\) ficará distorcido.
+  * **Isolamento de Treino e Teste**: Os centros \\(c_j\\) e os pesos \\(w\\) devem ser aprendidos exclusivamente com os dados de treino para evitar vazamento de dados (*data leakage*).
+
+---
+
+#### **Dia 2: Construção e Ajuste da RBF Gaussiana** *(Vale 2,0 pontos)*
+* **Atividades**:
+  1. Definir \\(M\\) centros \\(c_j\\) distribuídos no domínio normalizado de \\(u\\) (ex.: \\(M = 7\\) a \\(10\\) centros) e escolher a largura \\(\sigma\\) proporcional ao espaçamento entre centros vizinhos.
+  2. Montar a matriz de projeto \\(\Phi \in \mathbb{R}^{N_{treino} \times (M+1)}\\), na qual a 1ª coluna contém \\(1\\) (termo de viés \\(w_0\\)) e as demais colunas contêm as funções gaussianas \\(\phi_j(x_i) = \exp\left(-\frac{(x_i - c_j)^2}{2\sigma^2}\right)\\).
+  3. Resolver o vetor de pesos \\(w\\) via **Equação Normal**: \\(\Phi^T \Phi w = \Phi^T y \implies w = (\Phi^T \Phi)^{-1} \Phi^T y\\).
+  4. Gerar a saída filtrada/ajustada \\(\hat{y}_{RBF} = \Phi w\\) para os conjuntos de treino e teste.
+* **Restrições e Requisitos da Etapa**:
+  * **Resolução Numérica Estável**: Utilizar `np.linalg.pinv` (pseudo-inversa) ou decomposição linear em vez de `np.linalg.inv` direta para evitar falhas por singularidade.
+  * **Número de Condição \\(\text{cond}(\Phi^T \Phi)\\)**: Verificar o condicionamento da matriz. Se \\(\sigma\\) for grande demais, as colunas de \\(\Phi\\) tornam-se quase colineares, elevando o número de condição e tornando os pesos \\(w\\) instáveis.
+
+---
+
+#### **Dia 3: Avaliação Estatística: EMQ, Regressão e Pearson** *(Vale 4,0 pontos)*
+* **Atividades**:
+  1. **Erro Médio Quadrático (EMQ / RMSE)** *(1,0 ponto)*: Calcular \\(EMQ = \frac{1}{N} \|y - \hat{y}_{RBF}\|^2\\) e \\(RMSE = \sqrt{EMQ}\\) nos dados de treino e teste.
+  2. **Regressão Linear dos Dados** *(1,0 ponto)*: Efetuar a regressão linear entre o valor real da progressão \\(y\\) e o valor estimado pelo modelo \\(\hat{y}_{RBF}\\).
+  3. **Coeficiente de Correlação de Pearson (\\(r\\))** *(2,0 pontos)*: Calcular a correlação de Pearson entre \\(y\\) e \\(\hat{y}_{RBF}\\) para quantificar o grau de associação linear.
+  4. Plotar os gráficos do ajuste da RBF sobre o espalhamento de dados com a faixa de incerteza \\(\pm \sqrt{EMQ}\\) e o gráfico de regressão \\(y\\) vs \\(\hat{y}_{RBF}\\).
+* **Restrições e Requisitos da Etapa**:
+  * **Análise de Resíduos**: Os resíduos \\(e_i = y_i - \hat{y}_{i}\\) devem apresentar distribuição aproximadamente homogênea, com a reta de regressão entre \\(y\\) e \\(\hat{y}\\) com inclinação próxima de \\(1\\).
+
+---
+
+#### **Dia 4: Comparação via Mínimos Quadrados (MMQ)** *(Vale 2,0 pontos)*
+* **Atividades**:
+  1. Ajustar o modelo tradicional de **Mínimos Quadrados (MMQ)** (Regressão Linear simples \\(w_0 + w_1 u\\) e/ou Polinomial de Grau 2/3) utilizando o mesmo conjunto de treino.
+  2. Calcular o **EMQ / RMSE do MMQ** em treino e teste.
+  3. Realizar a **regressão linear** entre os dados reais \\(y\\) e o modelo MMQ \\(\hat{y}_{MMQ}\\).
+  4. Calcular o **Coeficiente de Correlação de Pearson (\\(r_{MMQ}\\))**.
+  5. Gerar gráficos comparativos sobrepostos: **Dados Reais vs. RBF vs. MMQ**.
+* **Restrições e Requisitos da Etapa**:
+  * **Isonomia de Comparação**: As métricas da RBF e do MMQ devem ser calculadas **exatamente no mesmo conjunto de teste** para garantir comparabilidade científica.
+  * **Estabilidade Polinomial**: Evitar polinômios de grau elevado no MMQ para impedir oscilações artificiais nas bordas.
+
+---
+
+#### **Dia 5: Análise dos Resultados e Redação do Relatório** *(Vale 2,0 pontos)*
+* **Atividades**:
+  1. Construir a tabela comparativa de desempenho final:
+     * Modelo (RBF vs. MMQ)
+     * Hiperparâmetros (\\(M, \sigma\\), grau do polinômio)
+     * \\(EMQ_{treino}\\) e \\(EMQ_{teste}\\)
+     * Coeficiente de Correlação de Pearson (\\(r\\))
+  2. Discutir os impactos de alterar \\(M\\) e \\(\sigma\\) (*underfitting* vs. *overfitting*).
+  3. Redigir o relatório estruturado em 5 seções obrigatórias conforme o roteiro oficial (`Projeto_U2.pdf`): *1. Introdução*, *2. Objetivos*, *3. Metodologia*, *4. Resultados e Discussão* e *5. Considerações Finais*.
+* **Restrições e Requisitos da Etapa**:
+  * **Conformidade com o Barema de Notas**: Assegurar que os 6 componentes de nota (RBF 2,0pt, EMQ 1,0pt, Regressão 1,0pt, Pearson 2,0pt, MMQ 2,0pt, Conclusões 2,0pt) estejam explicitamente apresentados no texto.
+
+---
+
+💡 Se quiser, posso gerar o script completo em Python para carregar o `load_diabetes`, executar o ajuste RBF, calcular o EMQ, a Correlação de Pearson e gerar os gráficos de comparação contra o MMQ!
