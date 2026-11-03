@@ -137,3 +137,94 @@ $$\phi_j(u) = \exp\left(-\frac{(u - c_j)^2}{2\sigma^2}\right)$$
 
 21. **Qual a diferença entre os parâmetros ($\mathbf{w}$) e os hiperparâmetros ($M$ e $\sigma$)?**
     * *Resposta:* Os parâmetros $\mathbf{w} = [w_0, w_1, \dots, w_M]^T$ são os pesos aprendidos automaticamente pela resolução da Equação Normal. Os hiperparâmetros $M$ (quantidade de centros) e $\sigma$ (abertura das gaussianas) são decisões estruturais definidas pelo engenheiro antes do processo de ajuste.
+
+---
+
+# 📅 DIA 2: Construção e Ajuste da RBF Gaussiana (Álgebra Linear e Estabilidade Numérica)
+
+Neste segundo dia, implementamos o modelo não-linear central exigido pelo professor Joilson: a **Rede de Base Radial (RBF Gaussiana)**. Deduzimos a formulação matricial da Matriz de Projeto $\Phi$, resolvemos analiticamente o vetor de pesos via pseudo-inversa de Moore-Penrose e realizamos o diagnóstico de estabilidade numérica através do Número de Condição.
+
+---
+
+### 📚 1. Formulação Matemática da RBF Gaussiana
+A aproximação por funções de base radial modela a variável de saída contínua $\hat{y}(u)$ como uma combinação linear de funções de ativação simétricas locais, acrescida de um termo constante de viés (*bias*):
+$$\hat{y}(u) = w_0 + \sum_{j=1}^{M} w_j \phi_j(u)$$
+onde:
+* $u \in [0, 1]$ é a entrada normalizada (IMC do paciente).
+* $w_0$ é o termo de viés (intercepto global).
+* $w_j$ são os pesos sinápticos associados a cada base gaussiana.
+* $\phi_j(u)$ é a função gaussiana de base radial centrada em $c_j$ com largura $\sigma$:
+  $$\phi_j(u) = \exp\left(-\frac{(u - c_j)^2}{2\sigma^2}\right)$$
+
+---
+
+### 📚 2. O Truque da Linearidade nos Parâmetros e a Matriz $\Phi$
+Embora a função $\phi_j(u)$ seja fortemente **não-linear na variável de entrada $u$**, o modelo é estritamente **linear nos parâmetros $\mathbf{w}$**:
+$$\hat{\mathbf{y}} = \Phi \mathbf{w}$$
+onde $\Phi \in \mathbb{R}^{N \times (M+1)}$ é a **Matriz de Projeto** (*Design Matrix*):
+$$\Phi = \begin{bmatrix}
+1 & \phi_1(u_1) & \phi_2(u_1) & \dots & \phi_M(u_1) \\
+1 & \phi_1(u_2) & \phi_2(u_2) & \dots & \phi_M(u_2) \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & \phi_1(u_N) & \phi_2(u_N) & \dots & \phi_M(u_N)
+\end{bmatrix}, \quad \mathbf{w} = \begin{bmatrix} w_0 \\ w_1 \\ \vdots \\ w_M \end{bmatrix}$$
+
+Essa propriedade algébrica é fundamental: ela transforma a busca pelos parâmetros ótimos em um problema de **mínimos quadrados lineares**, eliminando a necessidade de algoritmos iterativos sujeitos a mínimos locais (como a retropropagação em MLPs profundas).
+
+---
+
+### 📚 3. Dedução da Equação Normal e a Pseudo-Inversa via SVD
+Queremos encontrar o vetor $\mathbf{w}$ que minimiza a soma dos quadrados dos resíduos (função custo $J(\mathbf{w})$):
+$$J(\mathbf{w}) = \frac{1}{N} \|\Phi \mathbf{w} - \mathbf{y}\|^2 = \frac{1}{N} (\Phi \mathbf{w} - \mathbf{y})^T (\Phi \mathbf{w} - \mathbf{y})$$
+Calculando o gradiente em relação a $\mathbf{w}$ e igualando a zero:
+$$\nabla_{\mathbf{w}} J(\mathbf{w}) = \frac{2}{N} \Phi^T (\Phi \mathbf{w} - \mathbf{y}) = \mathbf{0} \implies \Phi^T \Phi \mathbf{w} = \Phi^T \mathbf{y}$$
+
+#### Por que nunca inverter $\Phi^T \Phi$ diretamente?
+A inversão clássica $\mathbf{w} = (\Phi^T \Phi)^{-1} \Phi^T \mathbf{y}$ exige o cálculo explícito da inversa de $(\Phi^T \Phi)$. Se as gaussianas possuírem sobreposição excessiva, colunas de $\Phi$ tornam-se quase-colineares, fazendo com que $\det(\Phi^T \Phi) \approx 0$ e tornando $(\Phi^T \Phi)$ praticamente singular.
+
+#### Solução Numérica Adotada: Pseudo-Inversa de Moore-Penrose (`pinv` via SVD)
+A biblioteca decompõe $\Phi$ em **Valores Singulares** ($\Phi = U \Sigma V^T$):
+$$\mathbf{w} = \Phi^\dagger \mathbf{y} = V \Sigma^\dagger U^T \mathbf{y}$$
+onde $\Sigma^\dagger$ inverte apenas os valores singulares estritamente maiores que a tolerância de máquina $\epsilon$, truncando os componentes ruidosos para zero. Isso garante que $\mathbf{w}$ seja a solução de **menor norma euclidiana $\|\mathbf{w}\|_2$**, evitando pesos gigantescos e instáveis.
+
+---
+
+### 📚 4. Número de Condição $\text{cond}(\Phi^T \Phi)$ e Sensibilidade Numérica
+O Número de Condição $\kappa$ da matriz $(\Phi^T \Phi)$ é calculado pela razão entre seu autovalor máximo e mínimo:
+$$\kappa = \frac{\lambda_{\max}(\Phi^T \Phi)}{\lambda_{\min}(\Phi^T \Phi)}$$
+* Se $\sigma$ for muito grande: as gaussianas achatam-se e passam a cobrir todo o domínio de forma uniforme. As colunas tornam-se redundantes, $\lambda_{\min} \to 0$ e $\kappa$ explode para valores $> 10^{14}$ (matriz mal-condicionada).
+* No nosso experimento com $M=8$ e $\sigma = 0{,}1429$, obtivemos $\kappa = 1{,}42 \times 10^5$, atestando que o sistema é **bem-condicionado** e resistente a erros de arredondamento de ponto flutuante.
+
+---
+
+### ❓ 10 Questões de Revisão Técnica — Dia 2 (Preparação para Defesa Oral)
+
+22. **Por que a RBF é considerada uma técnica linear nos parâmetros, se as funções gaussianas são não-lineares?**
+    * *Resposta:* Porque a não-linearidade afeta apenas as variáveis de entrada $u$, gerando a matriz $\Phi$. Uma vez calculada $\Phi$, a saída do modelo é uma simples soma ponderada linear $\hat{y} = \sum w_j \Phi_{ij}$. Logo, a função de custo em relação a $\mathbf{w}$ é puramente quadrática convexa.
+
+23. **Qual é a consequência geométrica de escolher $\sigma$ muito menor do que o espaçamento entre centros ($\sigma \ll \Delta c$)?**
+    * *Resposta:* Cada gaussiana torna-se um "pico" excessivamente estreito que atua apenas na vizinhança imediata de seu centro. Entre dois centros adjacentes, a resposta das bases decai para zero, gerando "vales" artificiais e incapacidade de generalizar para novos dados.
+
+24. **O que acontece algebricamente com a matriz $\Phi$ quando $\sigma$ é excessivamente grande?**
+    * *Resposta:* As gaussianas tornam-se quase constantes e horizontais ao longo de todo o domínio $[0, 1]$. Todas as colunas de $\Phi$ passam a se parecer com a primeira coluna (a coluna de viés de 1s), provocando multicolinearidade severa e perda de posto (*rank deficiency*).
+
+25. **Como o Número de Condição ($\kappa$) diagnostica a estabilidade numérica da solução?**
+    * *Resposta:* $\kappa$ quantifica a sensibilidade da solução $\mathbf{w}$ a pequenas perturbações nos dados de entrada ou erros de arredondamento em ponto flutuante. Um valor moderado como $1{,}42 \times 10^5$ comprova que a matriz é invertível com segurança numérica.
+
+26. **Por que a Decomposição em Valores Singulares (SVD) é superior à Inversão de Matrizes Direta na Equação Normal?**
+    * *Resposta:* Porque a inversão direta $(\Phi^T \Phi)^{-1}$ eleva ao quadrado o número de condição original da matriz ($\kappa(\Phi^T \Phi) = \kappa(\Phi)^2$) e falha catastróficamente se a matriz for quase singular. A SVD atua diretamente sobre $\Phi$, isolando e truncando valores singulares minúsculos que causariam divisão por zero numérico.
+
+27. **Qual é o papel do termo de viés $w_0$ na formulação da RBF?**
+    * *Resposta:* O viés $w_0$ atua como o intercepto global da curva, permitindo transladar verticalmente o modelo sem forçar as bases gaussianas a compensarem sozinhas o nível médio da variável alvo ($y$). No nosso ajuste, $w_0 = 1012{,}14$.
+
+28. **Por que os centros $c_j$ foram posicionados de forma uniforme em $[0, 1]$ em vez de usar agrupamento por K-Means?**
+    * *Resposta:* Como o problema possui uma única variável de entrada ($u = \text{IMC}$) distribuída de forma contínua em $[0, 1]$, a distribuição uniforme com espaçamento analítico $\Delta c = \frac{1}{M-1}$ garante cobertura homogênea e regularidade na escolha de $\sigma$, sem adicionar a complexidade estocástica do K-Means.
+
+29. **Como a solução obtida por $\mathbf{w} = \Phi^\dagger \mathbf{y}$ lida com problemas sobredeterminados ($N > M$)?**
+    * *Resposta:* Em problemas sobredeterminados (temos $N=353$ equações e apenas $M+1=9$ incógnitas), não existe solução exata que satisfaça todos os pontos. A pseudo-inversa encontra analiticamente a solução única que minimiza a norma euclidiana do resíduo $\|\Phi \mathbf{w} - \mathbf{y}\|_2$ (mínimos quadrados).
+
+30. **O que a magnitude dos pesos obtidos ($w_1 \dots w_8$) revela sobre o comportamento das bases vizinhas?**
+    * *Resposta:* Pesos com sinais alternados e magnitudes moderadas indicam que as gaussianas vizinhas cooperam para modelar a inclinação da curva suave sem gerar oscilações de alta frequência descontroladas (ausência de instabilidade de Runge).
+
+31. **Por que a resolução por Equação Normal é computacionalmente mais rápida do que a Descida do Gradiente neste problema?**
+    * *Resposta:* Como $M=8$ é pequeno, calcular $\Phi^\dagger$ envolve matrizes minúsculas de ordem $9 \times 9$, resolvidas em frações de milissegundo em uma única operação direta. A descida do gradiente exigiria centenas de épocas iterativas com ajuste delicado da taxa de aprendizado $\eta$.
