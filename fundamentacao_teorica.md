@@ -73,7 +73,7 @@ $$\phi_j(u) = \exp\left(-\frac{(u - c_j)^2}{2\sigma^2}\right)$$
 
 ---
 
-### ❓ 10 Questões de Revisão Técnica — Dia 1 (Preparação para Defesa Oral)
+### ❓ 21 Questões de Revisão Técnica — Dia 1 (Preparação para Defesa Oral)
 
 1. **Qual a diferença fundamental entre Interpolação Numérica e Ajuste de Curvas por Regressão?**
    * *Resposta:* A interpolação exige que a curva passe exatamente por todos os pontos de dados ($f(x_i) = y_i$), sendo adequada quando não há ruído de medição. O ajuste de curvas busca minimizar uma função de perda global (como a soma dos quadrados dos resíduos), encontrando uma função suave que filtra o ruído e captura apenas a tendência do sistema físico.
@@ -104,3 +104,36 @@ $$\phi_j(u) = \exp\left(-\frac{(u - c_j)^2}{2\sigma^2}\right)$$
 
 10. **Se utilizássemos uma padronização Z-score ($\mu=0, \sigma=1$) em vez de MinMax, o que mudaria na formulação da RBF?**
     * *Resposta:* O domínio dos dados se estenderia de $-\infty$ a $+\infty$ (geralmente concentrado entre $[-3, +3]$). A distribuição dos centros precisaria cobrir esse intervalo estendido ou ser alocada com base em quantis/médias das amostras, tornando a heurística de centros uniformes menos direta do que no intervalo fechado $[0, 1]$.
+
+11. **O que é ruído estocástico e como ele se manifesta neste projeto?**
+    * *Resposta:* É uma variação aleatória, probabilística e não-determinística inerente aos dados reais ($y_i = f(u_i) + \epsilon_i$, onde $\epsilon_i \sim \mathcal{N}(0, \sigma_\epsilon^2)$). Na diabetes, reflete fatores biológicos não medidos (genética, dieta do dia) e variações laboratoriais. O modelo deve filtrar esse ruído em vez de interpolá-lo.
+
+12. **O que são Splines Cúbicas e por que não as utilizamos neste projeto?**
+    * *Resposta:* São métodos de interpolação polinomial por partes que garantem continuidade até a 2ª derivada nos nós (*knots*). Não são adequadas aqui porque são interpoladoras estritas (forçam a curva a passar por cada ponto), o que amplificaria o ruído biológico dos dados em vez de filtrar a tendência suave.
+
+13. **Qual a diferença matemática fundamental entre Redes RBF e o algoritmo XGBoost?**
+    * *Resposta:* A RBF gera uma curva contínua, analítica e infinitamente diferenciável ($\mathcal{C}^\infty$), treinada em uma única etapa pela Equação Normal via Álgebra Linear. O XGBoost é um ensemble de centenas de árvores de decisão que divide o espaço em degraus descontínuos e é treinado de forma iterativa por gradiente boosting.
+
+14. **Nosso modelo utiliza apenas o IMC como entrada? Quais são as outras 9 variáveis do dataset?**
+    * *Resposta:* Sim, utilizamos apenas o IMC (`bmi`) para modelar o ajuste de curva contínuo univariado $u \to y$, conforme o roteiro do professor. O dataset `load_diabetes` completo conta ainda com: idade (`age`), sexo (`sex`), pressão arterial (`bp`) e seis dosagens séricas: colesterol total (`s1`), LDL (`s2`), HDL (`s3`), razão colesterol/HDL (`s4`), triglicerídeos (`s5`) e glicose (`s6`).
+
+15. **O que buscamos concretamente com o treinamento e modelagem deste projeto?**
+    * *Resposta:* Modelar a dinâmica do sistema biológico através de uma função suave $\hat{y} = f(u)$, demonstrar formalmente a superioridade das bases locais da RBF frente à rigidez do MMQ tradicional e consolidar a implementação prática de estabilidade matricial via Álgebra Linear Numérica.
+
+16. **O que é a Matriz de Projeto ($\Phi$) e qual o seu papel algébrico na RBF?**
+    * *Resposta:* É a matriz $N \times (M+1)$ cujas colunas contêm o termo de viés (coluna de 1s) e a avaliação das $M$ funções gaussianas para cada amostra de treino. Ela transforma um problema não-linear nas entradas em um problema estritamente linear nos pesos ($\hat{\mathbf{y}} = \Phi \mathbf{w}$), permitindo solução analítica direta.
+
+17. **O que é o Coeficiente de Correlação de Pearson ($r$) e como ele avalia o modelo?**
+    * *Resposta:* É uma métrica estatística paramétrica adimensional que quantifica a força e a direção da associação linear entre os valores reais ($y$) e as estimativas do modelo ($\hat{y}$): $r = \frac{\text{cov}(y, \hat{y})}{\sigma_y \sigma_{\hat{y}}}$. Quanto mais próximo de $1{,}0$ no conjunto de teste, mais calibradas e proporcionais são as predições.
+
+18. **Por que o conjunto de teste resultou no intervalo $[-0{,}0043, 1{,}0388]$ após o MinMaxScaler?**
+    * *Resposta:* Porque o escalonador MinMax foi calibrado exclusivamente com o mínimo e máximo do conjunto de treino (evitando *data leakage*). Como o conjunto de teste possui pacientes com IMC ligeiramente fora dos extremos do treino, a projeção ultrapassou a faixa $[0, 1]$, comprovando cientificamente a ausência de vazamento de dados.
+
+19. **O que é a abertura $\sigma$ da função gaussiana e como ela afeta geometricamente a curva?**
+    * *Resposta:* É a largura (desvio-padrão) da função de base radial. Se for muito pequena ($\sigma \ll \Delta c$), gera "espinhos" pontiagudos isolados com vales artificiais entre centros; se for balanceada ($\sigma \approx \Delta c$), produz uma sobreposição suave; se for grande demais, achata as bases, torna as colunas de $\Phi$ colineares e explode o número de condição.
+
+20. **O que significa alta variância amostral no contexto de ajuste de curvas?**
+    * *Resposta:* É a hipersensibilidade do modelo à amostra de treino específica utilizada (sintoma de *overfitting*). Ocorre quando o modelo memoriza o ruído amostral, fazendo com que pequenas variações no conjunto de dados de entrada alterem drasticamente os pesos e a forma da curva ajustada.
+
+21. **Qual a diferença entre os parâmetros ($\mathbf{w}$) e os hiperparâmetros ($M$ e $\sigma$)?**
+    * *Resposta:* Os parâmetros $\mathbf{w} = [w_0, w_1, \dots, w_M]^T$ são os pesos aprendidos automaticamente pela resolução da Equação Normal. Os hiperparâmetros $M$ (quantidade de centros) e $\sigma$ (abertura das gaussianas) são decisões estruturais definidas pelo engenheiro antes do processo de ajuste.
