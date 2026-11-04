@@ -258,3 +258,92 @@ $$\kappa = \frac{\lambda_{\max}(\Phi^T \Phi)}{\lambda_{\min}(\Phi^T \Phi)}$$
 
 35. **Por que no nosso ajuste o termo de viés resultou em $w_0 = 1012{,}14$? Nós que escolhemos esse valor?**
     * *Resposta:* Não, nós não escolhemos $w_0$; ele foi aprendido automaticamente pela resolução da Equação Normal ($\mathbf{w} = \Phi^\dagger \mathbf{y}$). O valor $1012{,}14$ resultou alto porque o algoritmo utilizou o viés como uma "âncora de teto" global positiva, enquanto quase todos os pesos das bases gaussianas receberam valores fortemente negativos ($w_1 = -808{,}51, w_3 = -692{,}12, w_5 = -546{,}85$). Como as bases gaussianas se sobrepõem no domínio $[0, 1]$, elas somam aproximadamente $-860$, resultando no ajuste final balanceado: $\hat{y} \approx 1012{,}14 - 860 \approx 152$, que é exatamente a média da progressão da diabetes observada nos pacientes.
+
+---
+
+# 📅 DIA 3: Avaliação Estatística: EMQ, Regressão Linear e Correlação de Pearson
+
+Neste terceiro dia, implementamos a suíte de validação estatística quantitativa exigida pelo professor Joilson no roteiro da Unidade 2. Avaliamos a discrepância residual via EMQ e RMSE, quantificamos a força da associação linear via Coeficiente de Pearson e analisamos a calibração do modelo através da reta de regressão entre valores reais e estimados.
+
+---
+
+### 🎯 O Objetivo do Dia 3 e a Relação com os Requisitos do Trabalho (Barema U2)
+
+No [`Projeto_U2.pdf`](file:///C:/Users/Jacson/Documents/Repositorios/Computacao%20Numerica/Unidade%202/Projeto_U2.pdf), o professor Joilson estabeleceu que as métricas estatísticas compõem a maior fatia avaliativa da metodologia (**4,0 pontos** no total). As atividades do Dia 3 cumpriram rigorosamente:
+
+1. **Atendimento ao Item 2 da Metodologia (Vale 1,0 ponto) e Etapa 02 dos Resultados:**
+   * *Exigência:* *"Obter o Erro Médio Quadrático - EMQ"* (Slide 5 e Slide 8).
+   * *Como o Dia 3 cumpre:* Calculamos o $\text{EMQ}$ e a sua raiz ($\text{RMSE}$) de forma analítica pura tanto no treino ($3715{,}07$ / $60{,}95$) quanto no teste ($4495{,}49$ / $67{,}05$), gerando a faixa de incerteza empírica $\hat{y} \pm \text{RMSE}$.
+2. **Atendimento ao Item 3 da Metodologia (Vale 1,0 ponto):**
+   * *Exigência:* *"Efetuar uma regressão linear entre os dados reais e os ajustados via RBF"* (Slide 5).
+   * *Como o Dia 3 cumpre:* Ajustamos por Mínimos Quadrados a reta $y = a \cdot \hat{y} + b$ sobre as $89$ amostras de teste, obtendo $a = 0{,}6460$ e $b = 51{,}48$, comparando-a com a bissetriz ideal $y = \hat{y}$.
+3. **Atendimento ao Item 4 da Metodologia (Vale 2,0 pontos) e Etapa 03 dos Resultados:**
+   * *Exigência:* *"Mostrar o Coeficiente de Correlação de Pearson"* (Slide 5 e Slide 9).
+   * *Como o Dia 3 cumpre:* Implementamos a fórmula paramétrica da covariância normalizada, obtendo $r = 0{,}6234$ no treino e $r = 0{,}4653$ em dados não-vistos de teste, comprovando associação estatisticamente significativa entre o IMC e a progressão da doença.
+
+---
+
+### 📚 1. Formulação do Erro Médio Quadrático (EMQ) e RMSE
+O Erro Médio Quadrático penaliza a discrepância quadrática entre o alvo físico $y$ e a saída da RBF $\hat{y}$:
+$$\text{EMQ} = \frac{1}{N} \sum_{i=1}^N (y_i - \hat{y}_i)^2 = \frac{1}{N} \|\mathbf{y} - \hat{\mathbf{y}}\|_2^2$$
+Como o EMQ resulta na unidade quadrática da grandeza original ($\text{pontos}^2$), calculamos a Raiz do Erro Médio Quadrático ($\text{RMSE}$):
+$$\text{RMSE} = \sqrt{\text{EMQ}}$$
+O RMSE expressa o desvio padrão dos resíduos na mesma escala de progressão clínica da diabetes. No nosso teste, $\text{RMSE} = 67{,}05$ pontos.
+
+---
+
+### 📚 2. Coeficiente de Correlação Linear de Pearson ($r$)
+O coeficiente de Pearson mede a covariância linear padronizada entre a realidade e o modelo:
+$$r = \frac{\sum_{i=1}^N (y_i - \bar{y})(\hat{y}_i - \bar{\hat{y}})}{\sqrt{\sum_{i=1}^N (y_i - \bar{y})^2} \sqrt{\sum_{i=1}^N (\hat{y}_i - \bar{\hat{y}})^2}} = \frac{\text{cov}(y, \hat{y})}{\sigma_y \sigma_{\hat{y}}}$$
+* No conjunto de treino: $r = 0{,}6234$.
+* No conjunto de teste: $r = 0{,}4653$.
+A retenção de um $r$ positivo e substancial no conjunto de teste comprova que a RBF generalizou o sinal fisiológico real sem colapso por memorização de ruído.
+
+---
+
+### 📚 3. Regressão Linear de Calibração ($y$ vs. $\hat{y}$)
+Ajustamos uma reta entre o valor real e a estimativa do modelo no conjunto de teste:
+$$y_i = a \cdot \hat{y}_i + b$$
+Pelo método dos Mínimos Quadrados:
+$$a = \frac{\text{cov}(\hat{y}, y)}{\text{var}(\hat{y})}, \quad b = \bar{y} - a \bar{\hat{y}}$$
+* **Resultado Obtido:** $a = 0{,}6460$, $b = 51{,}48$ com $R^2 = 0{,}2165$.
+* **Interpretação Numérica do Encolhimento para a Média:** O coeficiente angular $a < 1{,}0$ reflete o fenômeno clássico de **regressão à média**: diante de dados com ruído biológico estocástico, o modelo RBF suaviza os extremos, gerando predições que tendem ao valor médio populacional quando o sinal do IMC não é conclusivo.
+
+---
+
+### 📚 4. A Faixa de Incerteza ($\pm \text{RMSE}$)
+A faixa $\hat{y}(u) \pm \text{RMSE}$ traçada ao redor da curva ajustada delimita a região de dispersão estocástica esperada do sistema. Sob a premissa de resíduos com distribuição aproximadamente normal ($\epsilon \sim \mathcal{N}(0, \text{RMSE}^2)$), aproximadamente $68{,}3\%$ dos pacientes situam-se dentro desta faixa de tolerância, provando visualmente a capacidade da RBF de operar como filtro suave da nuvem de dados.
+
+---
+
+### ❓ 10 Questões de Revisão Técnica — Dia 3 (Preparação para Defesa Oral)
+
+36. **Qual a diferença fundamental entre EMQ e RMSE, e por que apresentamos ambos no relatório?**
+    * *Resposta:* O EMQ é a função custo analítica minimizada pela Equação Normal, mas sua unidade é quadrática ($\text{pontos}^2$). O RMSE é a raiz quadrada do EMQ, retornando à unidade física original da variável alvo, permitindo uma interpretação direta da magnitude média do erro de predição do modelo.
+
+37. **Por que o EMQ no teste ($4495{,}49$) foi superior ao EMQ no treino ($3715{,}07$)?**
+    * *Resposta:* Porque os pesos da RBF foram otimizados analiticamente para minimizar o erro estritamente sobre as 353 amostras de treino. O conjunto de teste contém dados inéditos sujeitos a variabilidade estocástica não vista pelo algoritmo, sendo esperado um erro ligeiramente maior na generalização.
+
+38. **O que significa a correlação de Pearson $r = 0{,}4653$ obtida no conjunto de teste?**
+    * *Resposta:* Indica uma associação linear positiva moderada e estatisticamente significativa entre as previsões do modelo e a progressão real da diabetes em pacientes não-vistos, comprovando que o modelo capturou o sinal fisiológico do IMC.
+
+39. **O que os parâmetros $a = 0{,}6460$ e $b = 51{,}48$ da reta de regressão revelam sobre a calibração da RBF?**
+    * *Resposta:* Como $a < 1{,}0$, o modelo apresenta o fenômeno estatístico de retração à média: ele tende a prever valores ligeiramente mais conservadores nos extremos (subestimando progressões muito severas e superestimando progressões muito baixas), mantendo o erro quadrático global sob controle.
+
+40. **Qual a relação matemática exata entre o Coeficiente de Pearson ($r$) e o Coeficiente de Determinação ($R^2$) na regressão linear simples?**
+    * *Resposta:* Na regressão linear simples entre uma única variável preditora e o alvo, o coeficiente de determinação é exatamente o quadrado da correlação de Pearson: $R^2 = r^2$. No nosso caso, $0{,}4653^2 \approx 0{,}2165$ ($21{,}65\%$ da variabilidade do teste explicada).
+
+41. **Como a faixa de incerteza de $\pm \text{RMSE}$ auxilia na interpretação da dinâmica do sistema físico?**
+    * *Resposta:* A faixa indica a tolerância esperada de variabilidade biológica do sistema. Ela demonstra que a RBF atua como a média condicional $\mathbb{E}[y|u]$, onde os pontos fora da linha central não são falhas do modelo, mas sim flutuações intrínsecas ao processo físico/biológico.
+
+42. **Se o coeficiente angular da regressão fosse $a = 1{,}0$ e o intercepto $b = 0{,}0$, o que isso significaria?**
+    * *Resposta:* Significaria calibração perfeita: a média das predições coincidiria exatamente com a média das observações reais em todos os níveis de IMC, sem nenhum viés sistemático de escala ou de deslocamento.
+
+43. **Por que calculamos o Pearson com base nos dados de teste e não apenas nos dados de treino?**
+    * *Resposta:* Calcular métricas apenas no treino mede apenas a capacidade de memorização do modelo. A avaliação em dados de teste é o único critério científico válido para medir a generalização frente a novas observações.
+
+44. **Por que o denominador da fórmula de Pearson pode ser zero em casos degenerados?**
+    * *Resposta:* Se o modelo fizesse predições constantes para todas as amostras ($\hat{y}_i = \text{constante}$), a variância amostral $\sum (\hat{y}_i - \bar{\hat{y}})^2$ seria zero, resultando em divisão por zero. Nosso código trata isso retornando $r = 0{,}0$.
+
+45. **Como o valor de $\text{RMSE} = 67{,}05$ se compara com o desvio padrão da variável alvo original?**
+    * *Resposta:* A variável alvo tem desvio padrão total de aproximadamente $77$ pontos. Um RMSE de $67{,}05$ demonstra que o modelo RBF baseado no IMC reduz a incerteza do sistema em relação à estimativa ingênua da média, comprovando ganho informacional real.
