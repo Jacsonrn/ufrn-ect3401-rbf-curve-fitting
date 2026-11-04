@@ -146,6 +146,24 @@ Neste segundo dia, implementamos o modelo não-linear central exigido pelo profe
 
 ---
 
+### 🎯 O Objetivo do Dia 2 e a Relação com os Requisitos do Trabalho (Barema U2)
+
+No roteiro oficial da disciplina ([`Projeto_U2.pdf`](file:///C:/Users/Jacson/Documents/Repositorios/Computacao%20Numerica/Unidade%202/Projeto_U2.pdf)), o professor Joilson B. A. Rego define requisitos claros e pontuados para a entrega da Unidade 2. As atividades do Dia 2 foram desenhadas para cobrir diretamente:
+
+1. **Atendimento ao Item 1 da Metodologia (Vale 2,0 pontos):**
+   * *Exigência:* *"Obter o Ajuste via Funções de Base Radial - RBF ou Funções Complexas"* (Slide 5).
+   * *Como o Dia 2 cumpre:* Implementamos do zero a classe `RBFGaussianRegressor` em Python puro e NumPy, configurando os $M$ centros, calculando a dispersão $\sigma$ e ajustando a superfície não-linear sobre os dados observados.
+2. **Atendimento ao Objetivo Específico de Parâmetros Livres:**
+   * *Exigência:* *"Identificar os parâmetros livres do modelo matemático obtido"* (Slide 4).
+   * *Como o Dia 2 cumpre:* Identificamos e quantificamos explicitamente todos os $M+1=9$ parâmetros livres calculados pela Equação Normal: o termo de viés $w_0 = 1012{,}14$ e os 8 pesos das bases gaussianas $\mathbf{w} = [w_1, \dots, w_8]^T$.
+3. **Atendimento à Etapa 01 dos Resultados:**
+   * *Exigência:* *"Resultados e Discussão - Etapa 01 - Ajuste Obtido"* (Slide 7).
+   * *Como o Dia 2 cumpre:* Geramos a curva contínua ajustada sobreposta aos conjuntos de treino (80%) e teste (20%), demonstrando a filtragem suave do ruído biológico e registrando o gráfico oficial em [`docs/figuras/dia2_ajuste_rbf.png`](file:///C:/Users/Jacson/Documents/Repositorios/Computacao%20Numerica/Unidade%202/docs/figuras/dia2_ajuste_rbf.png).
+4. **Garantia de Rigor em Computação Numérica (Estabilidade Matricial):**
+   * Em vez de simplesmente aplicar bibliotecas de caixa-preta, diagnosticamos a estabilidade numérica exigida na disciplina através do cálculo do **Número de Condição** $\text{cond}(\Phi^T \Phi) = 1{,}42 \times 10^5$, garantindo que a resolução por pseudo-inversa (SVD) seja imune a erros de ponto flutuante.
+
+---
+
 ### 📚 1. Formulação Matemática da RBF Gaussiana
 A aproximação por funções de base radial modela a variável de saída contínua $\hat{y}(u)$ como uma combinação linear de funções de ativação simétricas locais, acrescida de um termo constante de viés (*bias*):
 $$\hat{y}(u) = w_0 + \sum_{j=1}^{M} w_j \phi_j(u)$$
@@ -197,7 +215,7 @@ $$\kappa = \frac{\lambda_{\max}(\Phi^T \Phi)}{\lambda_{\min}(\Phi^T \Phi)}$$
 
 ---
 
-### ❓ 10 Questões de Revisão Técnica — Dia 2 (Preparação para Defesa Oral)
+### ❓ 14 Questões de Revisão Técnica — Dia 2 (Preparação para Defesa Oral)
 
 22. **Por que a RBF é considerada uma técnica linear nos parâmetros, se as funções gaussianas são não-lineares?**
     * *Resposta:* Porque a não-linearidade afeta apenas as variáveis de entrada $u$, gerando a matriz $\Phi$. Uma vez calculada $\Phi$, a saída do modelo é uma simples soma ponderada linear $\hat{y} = \sum w_j \Phi_{ij}$. Logo, a função de custo em relação a $\mathbf{w}$ é puramente quadrática convexa.
@@ -228,3 +246,15 @@ $$\kappa = \frac{\lambda_{\max}(\Phi^T \Phi)}{\lambda_{\min}(\Phi^T \Phi)}$$
 
 31. **Por que a resolução por Equação Normal é computacionalmente mais rápida do que a Descida do Gradiente neste problema?**
     * *Resposta:* Como $M=8$ é pequeno, calcular $\Phi^\dagger$ envolve matrizes minúsculas de ordem $9 \times 9$, resolvidas em frações de milissegundo em uma única operação direta. A descida do gradiente exigiria centenas de épocas iterativas com ajuste delicado da taxa de aprendizado $\eta$.
+
+32. **O que é a Pseudo-Inversa de Moore-Penrose e por que ela é indispensável neste projeto?**
+    * *Resposta:* É a generalização do conceito de matriz inversa para matrizes retangulares ou singulares. No nosso caso, como a matriz de projeto $\Phi$ tem dimensão $353 \times 9$, não existe inversa clássica $\Phi^{-1}$. A pseudo-inversa $\Phi^\dagger$ calcula analiticamente o vetor $\mathbf{w} = \Phi^\dagger \mathbf{y}$ que minimiza a soma dos quadrados dos resíduos (mínimos quadrados) e, simultaneamente, escolhe a solução de menor norma euclidiana $\|\mathbf{w}\|_2$, garantindo estabilidade e impedindo pesos excessivos.
+
+33. **O que é o Número de Condição ($\kappa$) e como ele orienta a avaliação de estabilidade numérica da RBF?**
+    * *Resposta:* É a medida de sensibilidade que quantifica quanto um erro de entrada ou de arredondamento em ponto flutuante ($10^{-16}$) é amplificado na resposta final dos pesos ($\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}$). Um número de condição moderado (como o nosso $\kappa = 1{,}42 \times 10^5$) prova que a matriz $(\Phi^T \Phi)$ é bem-condicionada e que os pesos calculados são estáveis e confiáveis. Valores próximos de $10^{16}$ indicariam uma matriz quase singular, com perda total de precisão numérica.
+
+34. **O que é a Decomposição em Valores Singulares (SVD) e por que ela é a base do cálculo da pseudo-inversa?**
+    * *Resposta:* O SVD fatora qualquer matriz retangular em três componentes ortogonais: $\Phi = U \Sigma V^T$, onde $\Sigma$ contém os valores singulares em ordem decrescente. A pseudo-inversa é obtida estavelmente por $\Phi^\dagger = V \Sigma^\dagger U^T$, invertendo individualmente cada valor singular não-nulo ($1/\sigma_i$). Valores singulares inferiores à tolerância da máquina são zerados, prevenindo divisões por números infinitesimais que causariam estouro numérico.
+
+35. **Por que no nosso ajuste o termo de viés resultou em $w_0 = 1012{,}14$? Nós que escolhemos esse valor?**
+    * *Resposta:* Não, nós não escolhemos $w_0$; ele foi aprendido automaticamente pela resolução da Equação Normal ($\mathbf{w} = \Phi^\dagger \mathbf{y}$). O valor $1012{,}14$ resultou alto porque o algoritmo utilizou o viés como uma "âncora de teto" global positiva, enquanto quase todos os pesos das bases gaussianas receberam valores fortemente negativos ($w_1 = -808{,}51, w_3 = -692{,}12, w_5 = -546{,}85$). Como as bases gaussianas se sobrepõem no domínio $[0, 1]$, elas somam aproximadamente $-860$, resultando no ajuste final balanceado: $\hat{y} \approx 1012{,}14 - 860 \approx 152$, que é exatamente a média da progressão da diabetes observada nos pacientes.
