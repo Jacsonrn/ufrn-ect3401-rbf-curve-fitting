@@ -347,3 +347,93 @@ A faixa $\hat{y}(u) \pm \text{RMSE}$ traçada ao redor da curva ajustada delimit
 
 45. **Como o valor de $\text{RMSE} = 67{,}05$ se compara com o desvio padrão da variável alvo original?**
     * *Resposta:* A variável alvo tem desvio padrão total de aproximadamente $77$ pontos. Um RMSE de $67{,}05$ demonstra que o modelo RBF baseado no IMC reduz a incerteza do sistema em relação à estimativa ingênua da média, comprovando ganho informacional real.
+
+---
+
+# 📅 DIA 4: Comparação via Mínimos Quadrados (MMQ) e Análise Crítica de Modelos
+
+Neste quarto dia, implementamos o modelo clássico de regressão polinomial por Mínimos Quadrados Ordinários (MMQ / OLS), cumprindo a exigência de comparação isonômica com a RBF Gaussiana. Analisamos a Matriz de Vandermonde, a sensibilidade numérica do número de condição e o dilema clássico entre complexidade e generalização (Navalha de Occam).
+
+---
+
+### 🎯 O Objetivo do Dia 4 e a Relação com os Requisitos do Trabalho (Barema U2)
+
+No [`Projeto_U2.pdf`](file:///C:/Users/Jacson/Documents/Repositorios/Computacao%20Numerica/Unidade%202/Projeto_U2.pdf), o professor Joilson exige uma confrontação formal entre abordagens locais e globais:
+
+1. **Atendimento ao Item 5 da Metodologia (Vale 2,0 pontos):**
+   * *Exigência:* *"Repetir o processo utilizando o Método dos Mínimos Quadrados - MMQ"* (Slide 5).
+   * *Como o Dia 4 cumpre:* Implementamos a classe `PolynomialMMQRegressor` em Python e avaliamos três ordens polinomiais (Grau 1 - Reta, Grau 2 - Parábola e Grau 3 - Cúbico).
+2. **Atendimento às Etapas 04 e 05 dos Resultados:**
+   * *Exigência:* *"Resultados e Discussão - Etapa 04 - Repetição do Processo para o Ajuste via MMQ"* (Slides 10 e 11).
+   * *Como o Dia 4 cumpre:* Calculamos todas as métricas ($\text{EMQ}$, $\text{RMSE}$, Pearson $r$ e $\kappa$) nas mesmas 89 amostras de teste, construindo a tabela comparativa oficial e os gráficos sobrepostos em [`docs/figuras/dia4_comparativo_rbf_vs_mmq.png`](file:///C:/Users/Jacson/Documents/Repositorios/Computacao%20Numerica/Unidade%202/docs/figuras/dia4_comparativo_rbf_vs_mmq.png) e [`docs/figuras/dia4_barras_comparativas_rmse.png`](file:///C:/Users/Jacson/Documents/Repositorios/Computacao%20Numerica/Unidade%202/docs/figuras/dia4_barras_comparativas_rmse.png).
+   * **Total acumulado no projeto:** 9,0 pontos de 10,0 pontos executados!
+
+---
+
+### 📚 1. Formulação do MMQ Polinomial e a Matriz de Vandermonde
+No MMQ, a função de ajuste é modelada como um polinômio global de grau $d$:
+$$\hat{y}(u) = w_0 + w_1 u + w_2 u^2 + \dots + w_d u^d$$
+Para as $N$ amostras, constrói-se a **Matriz de Vandermonde** $V \in \mathbb{R}^{N \times (d+1)}$:
+$$V = \begin{bmatrix}
+1 & u_1 & u_1^2 & \dots & u_1^d \\
+1 & u_2 & u_2^2 & \dots & u_2^d \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & u_N & u_N^2 & \dots & u_N^d
+\end{bmatrix}$$
+Os coeficientes ótimos minimizam a soma dos quadrados dos resíduos via Equação Normal:
+$$\mathbf{w}_{MMQ} = (V^T V)^{-1} V^T \mathbf{y} = V^\dagger \mathbf{y}$$
+
+---
+
+### 📚 2. Bases Monomiais Globais vs. Bases Gaussianas Locais
+* **MMQ (Bases Monomiais $u^k$):** Têm **suporte global**. Cada monômio estende sua influência por todo o domínio $[0, 1]$. Qualquer perturbação pontual em uma extremidade força a reconfiguração de toda a curva, gerando risco de oscilações espúrias (Fenômeno de Runge) em graus mais altos.
+* **RBF (Bases Gaussianas $\phi_j(u)$):** Têm **suporte local**. O efeito de cada função decai exponencialmente com a distância euclidiana ao centro $c_j$. Isso confere grande estabilidade geométrica para filtragem de variações regionais.
+
+---
+
+### 📚 3. Análise Numérica do Condicionamento de Vandermonde
+Conforme aumentamos o grau do polinômio, as colunas de potências sucessivas ($u^2, u^3, \dots$) tornam-se progressivamente parecidas para $u \in [0, 1]$:
+* **Grau 1 (Linear):** $\text{cond}(V^T V) = 36{,}2$ (excelente condicionamento).
+* **Grau 2 (Parábola):** $\text{cond}(V^T V) = 970$ (aumento de 26x).
+* **Grau 3 (Cúbico):** $\text{cond}(V^T V) = 24.300$ (aumento de quase 1.000x).
+Esse rápido crescimento do número de condição comprova por que a literatura de Computação Numérica desaconselha polinômios de ordem elevada na base canônica de Vandermonde.
+
+---
+
+### 📚 4. Discussão dos Resultados: Viés-Variância e a Navalha de Occam
+* **Desempenho no Treino:** A RBF ($M=8$) obteve o menor erro ($\text{RMSE} = 60{,}95$) devido aos seus 9 graus de liberdade locais, contra $62{,}08$ do MMQ linear.
+* **Desempenho no Teste:** O MMQ Linear alcançou $\text{RMSE} = 63{,}73$ e $r = 0{,}5076$. Como o dataset de diabetes apresenta uma tendência média suave com grande ruído estocástico, a simplicidade paramétrica do modelo linear (apenas 2 pesos) atuou como um regularizador natural, evitando memorizar os pequenos vales que a RBF de 8 centros capturou no treino.
+
+---
+
+### ❓ 10 Questões de Revisão Técnica — Dia 4 (Preparação para Defesa Oral)
+
+46. **Por que a Matriz de Vandermonde é propensa a mau-condicionamento em graus elevados?**
+    * *Resposta:* Porque para $u \in [0, 1]$, as curvas de potências sucessivas ($u^2, u^3, u^4$) tornam-se cada vez mais colineares e difíceis de distinguir numericamente. Isso faz com que as colunas da matriz $V$ fiquem quase linearmente dependentes, elevando o número de condição exponencialmente.
+
+47. **Qual a diferença fundamental de suporte entre a base monomial do MMQ e a base gaussiana da RBF?**
+    * *Resposta:* A base monomial tem suporte global infinito: uma alteração em uma amostra extrema altera a inclinação da curva em todo o domínio. A base gaussiana tem suporte local: sua ativação decai exponencialmente fora da vizinhança do centro $c_j$, confinando o impacto a uma região delimitada.
+
+48. **Por que a RBF superou o MMQ no conjunto de treinamento ($60{,}95$ vs. $62{,}08$)?**
+    * *Resposta:* Porque a RBF com $M=8$ possui 9 graus de liberdade locais (8 centros e 1 viés), permitindo que ela adapte sua curvatura a variações regionais do IMC que uma linha reta rígida (MMQ Grau 1) é incapaz de capturar (baixo viés).
+
+49. **Por que o MMQ Grau 1 obteve um RMSE de teste ligeiramente melhor que a RBF com $M=8$ ($63{,}73$ vs. $67{,}05$)?**
+    * *Resposta:* Esse resultado ilustra a Navalha de Occam e o trade-off viés-variância: diante de dados com ruído biológico intenso, o modelo linear simples possui variância mínima e não memoriza ruído, enquanto a RBF com 8 centros foi flexível o suficiente para se moldar a oscilações que eram ruído de treino.
+
+50. **O que aconteceu com o erro de teste ao aumentarmos o grau do MMQ de 1 para 2 e 3?**
+    * *Resposta:* O erro permaneceu praticamente idêntico ($63{,}73 \to 63{,}91 \to 63{,}75$), demonstrando que termos quadráticos e cúbicos globais não agregaram poder preditivo real sobre o sinal biológico do IMC, apenas elevaram o custo computacional e o número de condição.
+
+51. **O que é o Princípio da Isonomia Científica na comparação entre RBF e MMQ?**
+    * *Resposta:* É a garantia metodológica de que ambos os modelos concorrentes foram ajustados exatamente sobre os mesmos 353 pacientes de treino e avaliados exatamente sobre os mesmos 89 pacientes de teste, eliminando qualquer viés amostral na avaliação.
+
+52. **Como poderíamos otimizar a RBF para superar o MMQ também no conjunto de teste?**
+    * *Resposta:* Reduzindo o número de centros para um valor mais parcimonioso (como $M=4$ ou $M=5$) ou ampliando a abertura $\sigma$, o que tornaria a RBF mais suave e menos susceptível ao ruído local, unindo a flexibilidade não-linear com menor variância amostral.
+
+53. **O que é o Fenômeno de Runge e como o MMQ polinomial se relaciona com ele?**
+    * *Resposta:* É o surgimento de oscilações descontroladas nas extremidades do intervalo de interpolação quando se eleva o grau do polinômio com nós equidistantes. O MMQ com graus elevados sofre de instabilidade similar nas bordas do domínio $[0, 1]$.
+
+54. **Por que a correlação de Pearson do MMQ Linear no teste foi $r = 0{,}5076$?**
+    * *Resposta:* Porque o modelo linear estabelece uma relação monotonicamente crescente direta e rígida entre IMC e progressão, alinhando-se fortemente com a direção global média da nuvem de dados.
+
+55. **Qual critério um engenheiro deve usar para escolher entre RBF e MMQ em um sistema dinâmico real?**
+    * *Resposta:* Se o sistema apresentar dinâmicas locais conhecidas, como saturação, histerese ou zonas mortas (ex.: curva em S de uma turbina eólica), a RBF é mandatória. Se o sistema for predominantemente linear com forte ruído e recursos computacionais escassos, o MMQ simples é a escolha mais robusta e parcimoniosa.
