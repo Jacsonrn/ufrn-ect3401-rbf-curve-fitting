@@ -18,6 +18,8 @@ ENV/
 
 # Arquivos temporários e logs
 *.log
+*.aux
+*.out
 
 # Materiais e documentos da disciplina (mantidos apenas localmente)
 Projeto_U2.pdf

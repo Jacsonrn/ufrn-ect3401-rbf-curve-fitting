@@ -25,15 +25,33 @@ O foco central é a investigação de baixo nível em Álgebra Linear Numérica,
 │   ├── polynomial_mmq.py     # Modelo de Mínimos Quadrados (MMQ / OLS)
 │   └── metrics.py            # Cálculo de EMQ, RMSE, Pearson e regressão y vs y_hat
 ├── tests/                    # Validações experimentais e testes de etapas
-│   ├── test_data_loader.py   # Validação de amostragem e isolamento de teste
-│   └── test_rbf.py           # Validação da RBF e geração de curvas de resposta
+│   ├── test_data_loader.py   # Validação de amostragem e isolamento de teste (Dia 1)
+│   ├── test_rbf.py           # Validação da RBF e geração de curvas de resposta (Dia 2)
+│   ├── test_metrics.py       # Avaliação de EMQ, Pearson e calibração da RBF (Dia 3)
+│   └── test_comparison_mmq.py# Comparativo isonômico: RBF vs. MMQ Graus 1, 2 e 3 (Dia 4)
 ├── docs/                     # Documentação e artefatos de entrega
 │   ├── figuras/              # Gráficos de alta resolução para relatório e README
-│   └── relatorio/            # Artigo/Relatório formal em LaTeX
-├── fundamentacao_teorica.md  # Teoria exaustiva e banco de questões para defesa oral
+│   ├── relatorio/            # Artigo formal em LaTeX e PDF compilado (Dia 5)
+│   └── artigos_linkedin/     # Artigo técnico formatado para publicação no LinkedIn
+├── fundamentacao_teorica.md  # Teoria exaustiva e banco de 66 questões para defesa oral
 ├── .gitignore                # Regras de exclusão de artefatos temporários
 └── README.md                 # Apresentação do projeto e guia de execução
 ```
+
+---
+
+## 📊 Síntese Comparativa de Desempenho (Isonomia Amostral)
+
+| Modelo | Parâmetros Livres | RMSE Treino ($N=353$) | RMSE Teste ($N=89$) | Pearson $r$ (Teste) | Número de Condição ($\kappa$) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **RBF Gaussiana ($M=8, \sigma=0{,}1429$)** | 9 | **60,95** | 67,05 | 0,4653 | $1,42 \times 10^5$ |
+| **MMQ Grau 1 (Linear)** | 2 | 62,08 | **63,73** | **0,5076** | **36,2** |
+| **MMQ Grau 2 (Parábola)**| 3 | 62,04 | 63,91 | 0,5034 | 970 |
+| **MMQ Grau 3 (Cúbica)**  | 4 | 62,04 | 63,75 | 0,5052 | 24.300 |
+
+* **Treino:** A RBF Gaussiana superou o MMQ graças à sua flexibilidade local (baixo viés).
+* **Teste:** O MMQ Linear superou a RBF diante de dados inéditos, ilustrando o princípio da **Navalha de Occam** (baixa variância e regularização natural contra o ruído biológico).
+* **Estabilidade Numérica:** O número de condição de Vandermonde saltou de $36{,}2$ para $24.300$ no Grau 3, comprovando o risco de perda de precisão em ponto flutuante (**IEEE 754**).
 
 ---
 
@@ -56,14 +74,26 @@ source .venv/bin/activate
 pip install numpy matplotlib scikit-learn
 ```
 
-### 2. Executar os Testes de Validação
+### 2. Executar a Suíte Completa de Validação
 ```bash
-# Validação do Dia 1 (Carregamento e Normalização)
+# Validação do Dia 1 (Carregamento e Normalização Min-Max sem Leakage)
 python tests/test_data_loader.py
 
-# Validação do Dia 2 (Ajuste da RBF Gaussiana)
+# Validação do Dia 2 (Ajuste da RBF Gaussiana via SVD)
 python tests/test_rbf.py
+
+# Validação do Dia 3 (Avaliação Estatística: EMQ, RMSE, Pearson e Calibração OLS)
+python tests/test_metrics.py
+
+# Validação do Dia 4 (Comparativo Isonômico: RBF vs. MMQ Graus 1, 2 e 3)
+python tests/test_comparison_mmq.py
 ```
+
+### 3. Visualizar o Relatório Técnico Formal
+O artigo científico final estruturado para publicação acadêmica está disponível em:
+* Código-fonte LaTeX: [`docs/relatorio/relatorio_final_projeto_u2.tex`](docs/relatorio/relatorio_final_projeto_u2.tex)
+* Documento PDF compilado: [`docs/relatorio/relatorio_final_projeto_u2.pdf`](docs/relatorio/relatorio_final_projeto_u2.pdf)
+* Artigo para o LinkedIn: [`docs/artigos_linkedin/2026-11-08-ajuste-curvas-rbf-vs-mmq.md`](docs/artigos_linkedin/2026-11-08-ajuste-curvas-rbf-vs-mmq.md)
 
 ---
 
