@@ -42,15 +42,30 @@ Este repositório contém a implementação matemática do zero e a avaliação 
 
 ## 📈 Prova Visual dos Resultados
 
+### 1. Confrontação de Modelagem: RBF Gaussiana vs. Polinômios MMQ
 <p align="center">
-  <img src="docs/figuras/dia4_comparativo_rbf_vs_mmq.png" width="49%" alt="Comparativo de Curvas RBF vs MMQ" />
-  <img src="docs/figuras/dia4_barras_comparativas_rmse.png" width="47%" alt="Barras Comparativas de RMSE" />
+  <img src="docs/figuras/dia4_comparativo_rbf_vs_mmq.png" width="85%" alt="Comparativo de Curvas RBF vs MMQ" />
+</p>
+
+### 2. Generalização Preditiva: Erro RMSE (Treino vs. Teste)
+<p align="center">
+  <img src="docs/figuras/dia4_barras_comparativas_rmse.png" width="80%" alt="Barras Comparativas de RMSE" />
+</p>
+
+<details>
+<summary><b>🔍 Clique para expandir os Gráficos de Incerteza e Calibração OLS</b></summary>
+<br>
+
+<p align="center">
+  <b>Ajuste RBF com Faixa de Incerteza ($\pm \text{RMSE}$)</b><br>
+  <img src="docs/figuras/dia3_rbf_faixa_incerteza.png" width="80%" alt="RBF com Faixa de Incerteza" />
 </p>
 
 <p align="center">
-  <img src="docs/figuras/dia3_rbf_faixa_incerteza.png" width="49%" alt="RBF com Faixa de Incerteza" />
-  <img src="docs/figuras/dia3_regressao_real_vs_predito.png" width="47%" alt="Regressão de Calibração Real vs Predito" />
+  <b>Reta de Calibração Real vs. Predito ($y = 0{,}6460\hat{y} + 51{,}48$)</b><br>
+  <img src="docs/figuras/dia3_regressao_real_vs_predito.png" width="50%" alt="Regressão de Calibração Real vs Predito" />
 </p>
+</details>
 
 ### 💡 Principais Descobertas de Baixo Nível:
 1. **O Dilema Viés-Variância:** A RBF Gaussiana alcançou o menor erro de treinamento ($\text{RMSE} = 60{,}95$) devido aos seus 9 graus de liberdade locais, mas sofreu maior dispersão ao generalizar para dados inéditos ($\text{RMSE} = 67{,}05$).
