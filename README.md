@@ -126,5 +126,5 @@ O artigo científico final com 7 páginas estruturado no padrão ABNT/UFRN para 
 
 ## 👨‍💻 Autor
 **Jacson Arruda Ribeiro**  
-Universidade Federal do Rio Grande do Norte (UFRN) — Instituto Metrópole Digital (IMD / ECT)  
-Discente em Tecnologia da Informação / Engenharia
+Universidade Federal do Rio Grande do Norte (UFRN) — Centro de Tecnologia (CT / ECT)  
+Discente em Engenharia de Computação
