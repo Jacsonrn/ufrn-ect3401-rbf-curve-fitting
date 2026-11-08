@@ -406,7 +406,7 @@ Esse rápido crescimento do número de condição comprova por que a literatura 
 
 ---
 
-### ❓ 10 Questões de Revisão Técnica — Dia 4 (Preparação para Defesa Oral)
+### ❓ 16 Questões de Revisão Técnica — Dia 4 (Preparação para Defesa Oral)
 
 46. **Por que a Matriz de Vandermonde é propensa a mau-condicionamento em graus elevados?**
     * *Resposta:* Porque para $u \in [0, 1]$, as curvas de potências sucessivas ($u^2, u^3, u^4$) tornam-se cada vez mais colineares e difíceis de distinguir numericamente. Isso faz com que as colunas da matriz $V$ fiquem quase linearmente dependentes, elevando o número de condição exponencialmente.
@@ -437,3 +437,30 @@ Esse rápido crescimento do número de condição comprova por que a literatura 
 
 55. **Qual critério um engenheiro deve usar para escolher entre RBF e MMQ em um sistema dinâmico real?**
     * *Resposta:* Se o sistema apresentar dinâmicas locais conhecidas, como saturação, histerese ou zonas mortas (ex.: curva em S de uma turbina eólica), a RBF é mandatória. Se o sistema for predominantemente linear com forte ruído e recursos computacionais escassos, o MMQ simples é a escolha mais robusta e parcimoniosa.
+
+56. **O que é a Matriz de Vandermonde e qual a sua diferença conceitual em relação à Matriz de Projeto ($\Phi$)?**
+    * *Resposta:* A **Matriz de Projeto** (geralmente denotada por $\Phi$ ou $X$) é o conceito geral da Álgebra Linear e da Teoria de Regressão: trata-se de qualquer matriz $N \times P$ na qual cada linha corresponde a uma observação experimental e cada coluna corresponde a uma função de base arbitrária avaliada naquele ponto amostral. A **Matriz de Vandermonde** ($V$), por sua vez, é um caso particular e específico de Matriz de Projeto no qual as funções de base são estritamente potências inteiras sucessivas de uma única variável escalar ($u^0, u^1, u^2, \dots, u^d$). Em suma: toda matriz de Vandermonde é uma matriz de projeto, mas a recíproca não é verdadeira (por exemplo, a matriz de projeto da RBF utiliza funções de base exponenciais gaussianas locais centradas em $c_j$, e não monômios polinomiais).
+
+57. **O que é o Número de Condição ($\kappa$) de uma matriz e como ele afeta a precisão numérica segundo o padrão IEEE 754?**
+    * *Resposta:* O número de condição $\kappa(A) = \|A\| \cdot \|A^{-1}\| = \sigma_{\max} / \sigma_{\min}$ quantifica a sensibilidade ou amplificação de perturbações no sistema linear $A \mathbf{w} = \mathbf{y}$. Ele expressa o pior caso de propagação de incerteza: um erro de arredondamento de máquina de magnitude $\epsilon$ pode gerar um erro relativo na solução $\mathbf{w}$ amplificado em até $\kappa(A) \cdot \epsilon$. Pela regra prática da análise numérica computacional (padrão IEEE 754 dupla precisão / float64, que possui aproximadamente 16 dígitos significativos decimais), se o número de condição for $\kappa = 10^k$, perdem-se até $k$ dígitos significativos de precisão. No nosso projeto, o MMQ Grau 1 teve $\kappa = 36{,}2$ (estabilidade quase perfeita, perda de $\approx 1{,}5$ dígitos decimais); já o MMQ Grau 3 teve $\kappa = 24.300$ (perda de $\approx 4{,}4$ dígitos), enquanto a RBF com 8 centros atingiu $\kappa = 1{,}42 \times 10^5$, o que justificou a utilização da Decomposição em Valores Singulares (SVD via `np.linalg.pinv`) para truncar autovalores instáveis.
+
+58. **Por que o MMQ Linear apresenta dois valores distintos de RMSE no relatório ($62{,}08$ e $63{,}73$), e quantos parâmetros livres ele ajusta?**
+    * *Resposta:* Não há nenhuma contradição entre esses dois valores, pois eles avaliam o modelo em conjuntos de dados completamente distintos:
+      1. $\text{RMSE}_{\text{treino}} = 62{,}08$: mede o resíduo quadrático médio cometido pelo modelo sobre as 353 amostras de pacientes utilizadas ativamente para calcular a reta ótima via Equação Normal.
+      2. $\text{RMSE}_{\text{teste}} = 63{,}73$: mede a capacidade de generalização do modelo ao prever o desfecho clínico dos 89 pacientes inéditos mantidos em quarentena estrita.
+      O modelo linear possui exatamente **2 parâmetros livres** (graus de liberdade): o coeficiente linear/viés ($w_0$) e a inclinação angular ($w_1$), descrevendo a função afim $\hat{y}(u) = w_0 + w_1 u$.
+
+59. **O que é o Trade-off Viés-Variância no contexto de Ajuste de Curvas e Aprendizado de Máquina?**
+    * *Resposta:* É o dilema fundamental da modelagem preditiva que decompõe o erro quadrático esperado em três componentes ortogonais: $\text{Erro Total} = \text{Viés}^2 + \text{Variância} + \sigma^2_{\text{ruído}}$.
+      * **Viés (Underfitting):** Erro decorrente de simplificações estruturais excessivas do modelo. Um modelo de alto viés (como forçar uma linha reta sobre uma oscilação senoidal) é incapaz de capturar a física do fenômeno, performando mal tanto no treino quanto no teste.
+      * **Variância (Overfitting):** Erro decorrente da sensibilidade excessiva do modelo às variações estocásticas da amostra particular de treino. Um modelo de alta variância (polinômio de grau 20 ou rede com excesso de parâmetros) memoriza o ruído aleatório em vez do sinal real; ele apresenta erro quase nulo no treino, mas falha drasticamente diante de novos dados de teste.
+      * O objetivo do cientista da computação é encontrar a complexidade paramétrica ideal ("sweet spot") que minimize a soma de viés e variância no conjunto de validação/teste.
+
+60. **Como o princípio da Navalha de Occam (*Lex Parsimoniae*) justifica a preferência pelo MMQ Linear neste projeto?**
+    * *Resposta:* O princípio da Navalha de Occam estipula que, diante de hipóteses ou modelos concorrentes que apresentem poder explanatório ou erros empíricos equivalentes, a formulação mais simples deve ser sempre adotada. No nosso projeto, o MMQ Linear (2 parâmetros) atingiu $\text{RMSE}_{\text{teste}} = 63{,}73$, superando o MMQ Grau 2 ($63{,}91$), o MMQ Grau 3 ($63{,}75$) e a RBF ($67{,}05$). Como os termos não-lineares adicionais e os centros gaussianas extras não agregaram precisão preditiva nos dados de teste, a Navalha de Occam dita que a reta linear é a solução mais elegante, econômica, numericamente estável ($\kappa = 36{,}2$) e interpretável para modelar a relação entre IMC e progressão do diabetes.
+
+61. **Em termos conclusivos de engenharia, qual modelo foi superior: a RBF Gaussiana ou o MMQ Linear? O MMQ foi o vencedor do projeto?**
+    * *Resposta:* A resposta depende estritamente do critério e do domínio de avaliação considerado:
+      * **Vencedor em Generalização Preditiva (Critério Clínico/Teste):** O **MMQ Linear venceu**. Por possuir apenas 2 parâmetros, ele atuou com regularização natural contra o elevado ruído biológico intrínseco do dataset, obtendo menor erro de teste ($\text{RMSE} = 63{,}73$ contra $67{,}05$ da RBF) e maior correlação linear de Pearson ($r = 0{,}5076$ contra $0{,}4653$).
+      * **Vencedor em Capacidade de Ajuste (Critério de Baixo Viés/Treino):** A **RBF Gaussiana venceu**. Com seus 8 centros distribuídos ao longo do domínio e 9 graus de liberdade, a RBF obteve erro de treino substancialmente menor ($\text{RMSE} = 60{,}95$ contra $62{,}08$ do MMQ), provando sua flexibilidade superior para se conformar a geometrias complexas.
+      * **Conclusão Metodológica:** Não existe modelo intrinsecamente "melhor" a priori (Teorema do *No Free Lunch*). Para fenômenos biológicos com dispersão acentuada e correlação monotônica fraca/média, a simplicidade do MMQ é imbatível; contudo, para fenômenos físicos determinísticos com dinâmicas altamente não-lineares (saturação, transientes, histerese), a RBF Gaussiana é incomparavelmente superior e mandatória.
