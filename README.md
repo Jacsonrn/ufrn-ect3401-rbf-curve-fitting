@@ -31,8 +31,7 @@ O foco central é a investigação de baixo nível em Álgebra Linear Numérica,
 │   └── test_comparison_mmq.py# Comparativo isonômico: RBF vs. MMQ Graus 1, 2 e 3 (Dia 4)
 ├── docs/                     # Documentação e artefatos de entrega
 │   ├── figuras/              # Gráficos de alta resolução para relatório e README
-│   ├── relatorio/            # Artigo formal em LaTeX e PDF compilado (Dia 5)
-│   └── artigos_linkedin/     # Artigo técnico formatado para publicação no LinkedIn
+│   └── relatorio/            # Artigo formal em LaTeX e PDF compilado (Dia 5)
 ├── fundamentacao_teorica.md  # Teoria exaustiva e banco de 66 questões para defesa oral
 ├── .gitignore                # Regras de exclusão de artefatos temporários
 └── README.md                 # Apresentação do projeto e guia de execução
@@ -93,7 +92,6 @@ python tests/test_comparison_mmq.py
 O artigo científico final estruturado para publicação acadêmica está disponível em:
 * Código-fonte LaTeX: [`docs/relatorio/relatorio_final_projeto_u2.tex`](docs/relatorio/relatorio_final_projeto_u2.tex)
 * Documento PDF compilado: [`docs/relatorio/relatorio_final_projeto_u2.pdf`](docs/relatorio/relatorio_final_projeto_u2.pdf)
-* Artigo para o LinkedIn: [`docs/artigos_linkedin/2026-11-08-ajuste-curvas-rbf-vs-mmq.md`](docs/artigos_linkedin/2026-11-08-ajuste-curvas-rbf-vs-mmq.md)
 
 ---
 
